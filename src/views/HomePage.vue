@@ -68,7 +68,7 @@ const recentDocs = ref<Doc[]>([
 const router = useRouter();
 
 function createNewPage() {
-  router.push('/tabs/document/novo');
+  router.push('/pages/document/novo');
 }
 
 function openDocument(id: number) {

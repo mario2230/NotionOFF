@@ -3,7 +3,7 @@
     <ion-header class="doc-header">
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-back-button default-href="/tabs/home" color="dark" />
+          <ion-back-button default-href="/pages/home" color="dark" />
         </ion-buttons>
         <ion-title class="doc-toolbar-title">
           {{ pageTitle || 'Sem título' }}
@@ -188,9 +188,8 @@ function autoResize(event: Event) {
 }
 
 .content-block {
-  background: var(--card-bg);
+  background: var(--app-bg);
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-light);
   padding: 8px 12px;
   position: relative;
   transition: box-shadow 0.15s;
