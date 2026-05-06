@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router';
+import { initDB } from '@/database/service/authService';
 
 import { IonicVue } from '@ionic/vue';
 
@@ -37,6 +38,11 @@ import './theme/variables.css';
 const app = createApp(App)
   .use(IonicVue)
   .use(router);
+
+initDB().then(() => {
+  app.mount('#app');
+});
+
 
 router.isReady().then(() => {
   app.mount('#app');
