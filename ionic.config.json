@@ -1,0 +1,7 @@
+{
+  "name": "NotionOFF",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite"
+}
