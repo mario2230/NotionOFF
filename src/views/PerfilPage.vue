@@ -8,56 +8,31 @@
 
     <ion-content class="profile-content">
       <div class="profile-container">
-        <!-- Avatar -->
         <div class="avatar-section">
           <div class="avatar-circle">
-            <img
-              src="https://i.pravatar.cc/150?u=user"
-              alt="avatar"
-              class="avatar-img"
-            />
+            <img src="https://i.pravatar.cc/150?u=user" alt="avatar" class="avatar-img" />
           </div>
-          <h3 class="avatar-name">Mario</h3>
+          <h3 class="avatar-name">{{ perfil.nome }}</h3>
         </div>
-
 
         <div class="form-section">
           <div class="input-group">
             <label class="input-label">Nome</label>
-            <ion-input
-              v-model="profile.name"
-              placeholder="Seu nome"
-              class="custom-input"
-            />
+            <ion-input v-model="perfil.nome" placeholder="Seu nome" class="custom-input" />
           </div>
           <div class="input-group">
             <label class="input-label">E-mail</label>
-            <ion-input
-              v-model="profile.email"
-              type="email"
-              placeholder="email@exemplo.com"
-              class="custom-input"
-            />
+            <ion-input v-model="perfil.email" disabled class="custom-input" />
           </div>
           <div class="input-group">
-            <label class="input-label">Senha</label>
-            <ion-input
-              v-model="profile.password"
-              type="password"
-              placeholder="••••••••"
-              class="custom-input"
-            />
+            <label class="input-label">Nova senha</label>
+            <ion-input v-model="novaSenha" type="password" placeholder="••••••••" class="custom-input" />
           </div>
         </div>
 
-    
         <div class="actions-section">
-          <ion-button expand="block" color="new" class="save-btn" @click="saveProfile">
-            Salvar alterações
-          </ion-button>
-          <ion-button expand="block" fill="outline" color="danger" class="logout-btn" @click="logout">
-            Sair da conta
-          </ion-button>
+          <ion-button expand="block" color="new" class="save-btn" @click="salvarPerfil">Salvar alterações</ion-button>
+          <ion-button expand="block" fill="outline" color="danger" class="logout-btn" @click="logout">Sair da conta</ion-button>
         </div>
       </div>
     </ion-content>
@@ -65,29 +40,55 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue';
+import { ref, onMounted, reactive } from 'vue';
+import { useRouter } from 'vue-router';
 import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonInput,
-  IonButton,
+  IonPage, IonHeader, IonToolbar, IonTitle,
+  IonContent, IonInput, IonButton,
 } from '@ionic/vue';
+import { getUsuario, atualizarNome, atualizarSenha } from '@/database/service/userService';
 
-const profile = reactive({
-  name: 'Maria Silva',
-  email: 'maria@exemplo.com',
-  password: '',
+const router = useRouter();
+const perfil = reactive({ nome: '', email: '', id: 0 });
+const novaSenha = ref('');
+
+onMounted(async () => {
+  const str = localStorage.getItem('usuario');
+  if (!str) {
+    router.push('/pages/login');
+    return;
+  }
+  const usuarioLogado = JSON.parse(str);
+  const dados = await getUsuario(usuarioLogado.id);
+  if (dados) {
+    perfil.nome = dados.nome;
+    perfil.email = dados.email;
+    perfil.id = dados.id_usuario;
+  }
 });
 
-function saveProfile() {
-  console.log('Perfil salvo (visual)');
+async function salvarPerfil() {
+  try {
+    await atualizarNome(perfil.id, perfil.nome);
+    if (novaSenha.value) {
+      await atualizarSenha(perfil.id, novaSenha.value);
+      novaSenha.value = '';
+    }
+    // Atualiza localStorage se mudou nome
+    const str = localStorage.getItem('usuario');
+    if (str) {
+      const usuario = JSON.parse(str);
+      usuario.nome = perfil.nome;
+      localStorage.setItem('usuario', JSON.stringify(usuario));
+    }
+  } catch (e) {
+    console.error('Erro ao salvar perfil:', e);
+  }
 }
 
 function logout() {
-  console.log('Logout (visual)');
+  localStorage.removeItem('usuario');
+  router.push('/pages/login');
 }
 </script>
 

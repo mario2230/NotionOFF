@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router';
 import { RouteRecordRaw } from 'vue-router';
-import TabsPage from '../views/TabsPage.vue'
+import TabsPage from '../views/TabsPage.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -27,17 +27,18 @@ const routes: Array<RouteRecordRaw> = [
         path: 'perfil',
         component: () => import('@/views/PerfilPage.vue')
       },
+      // Rota para editar documento específico (com id) ou criar novo (sem id)
       {
-        path: 'documentos',
+        path: 'documentos/:id?',
         component: () => import('@/views/DocumentosPage.vue')
       }
     ]
   }
-]
+];
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes
-})
+});
 
-export default router
+export default router;

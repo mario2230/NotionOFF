@@ -11,7 +11,7 @@
 
     <ion-content :fullscreen="true" class="home-content">
       <div class="greeting-section">
-        <h1 class="greeting-title">Bem‑vindo de volta</h1>
+        <h1 class="greeting-title">Bem‑vindo, {{ usuarioLogado?.nome }} </h1>
         <p class="greeting-sub">Continue de onde parou ou crie algo novo.</p>
       </div>
 
@@ -22,12 +22,12 @@
 
       <div class="recent-section">
         <h2 class="section-label">Documentos recentes</h2>
-        <div v-if="recentDocs.length === 0" class="empty-state">
+        <div v-if="documentos.length === 0" class="empty-state">
           <ion-icon :icon="documentOutline" class="empty-icon" />
           <p>Nenhum documento ainda.</p>
         </div>
         <DocumentCard
-          v-for="doc in recentDocs"
+          v-for="doc in documentos"
           :key="doc.id"
           :title="doc.title"
           :date="doc.updatedAt"
@@ -42,64 +42,58 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import {
-  IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonIcon,
+  IonPage, IonHeader, IonToolbar, IonTitle,
+  IonContent, IonButton, IonIcon,
 } from '@ionic/vue';
 import { addOutline, documentOutline } from 'ionicons/icons';
 import DocumentCard from '@/components/DocumentCard.vue';
-
-
-import { criarPagina, listarPaginas } from '@/database/service/paginaService';
-import { adicionarBloco, listarBlocos } from '@/database/service/blocoService';
-
-interface Doc {
-  id: number;
-  title: string;
-  updatedAt: string;
-}
-
-const recentDocs = ref<Doc[]>([
-  { id: 1, title: 'Notas da reunião — Sprint 12', updatedAt: '2026-04-28T10:30:00' },
-  { id: 2, title: 'Lista de tarefas da semana', updatedAt: '2026-04-27T18:15:00' },
-  { id: 3, title: 'Brainstorm — layout do app', updatedAt: '2026-04-25T09:00:00' },
-]);
+import { listarPaginas, criarPagina } from '@/database/service/paginaService';
 
 const router = useRouter();
-
+const usuarioLogado = ref<{ id: number; nome: string } | null>(null);
+const documentos = ref<{ id: number; title: string; updatedAt: string }[]>([]);
 
 onMounted(async () => {
-  const usuarioTeste = JSON.parse(localStorage.getItem('usuario') || '{}');
-  if (!usuarioTeste.id) {
-    console.warn('Nenhum usuário logado para teste. Faça cadastro/login primeiro.');
+  const str = localStorage.getItem('usuario');
+  if (!str) {
+    router.push('/pages/login');
     return;
   }
-
-  try {
-
-    const novaPagina = await criarPagina('Minhas Notas', usuarioTeste.id);
-    console.log('Página criada:', novaPagina);
-
-    const paginas = await listarPaginas(usuarioTeste.id);
-    console.log('Páginas do usuário:', paginas);
-
-    if (paginas.length > 0) {
-      const paginaId = paginas[0].id_pagina;
-      await adicionarBloco(paginaId, 'texto', 'Primeiro parágrafo', 1);
-      await adicionarBloco(paginaId, 'checklist', 'Comprar leite', 2);
-
-      const blocos = await listarBlocos(paginaId);
-      console.log('Blocos da página:', blocos);
-    }
-  } catch (error) {
-    console.error('Erro no teste:', error);
-  }
+  usuarioLogado.value = JSON.parse(str);
+  await carregarPaginas();
 });
 
-function createNewPage() {
-  router.push('/pages/document/novo');
+async function carregarPaginas() {
+  if (!usuarioLogado.value) return;
+  try {
+    const paginas = await listarPaginas(usuarioLogado.value.id);
+    documentos.value = paginas.map(p => ({
+      id: p.id_pagina,
+      title: p.titulo,
+      updatedAt: p.criado_em,
+    }));
+  } catch (e) {
+    console.error('Erro ao carregar páginas:', e);
+  }
+}
+
+async function createNewPage() {
+  if (!usuarioLogado.value) return;
+  try {
+    const nova = await criarPagina('Nova página', usuarioLogado.value.id);
+    documentos.value.unshift({
+      id: nova.id_pagina,
+      title: nova.titulo,
+      updatedAt: nova.criado_em,
+    });
+    router.push(`/pages/documentos/${nova.id_pagina}`);
+  } catch (e) {
+    console.error('Erro ao criar página:', e);
+  }
 }
 
 function openDocument(id: number) {
-  router.push(`/tabs/document/${id}`);
+  router.push(`/pages/documentos/${id}`);
 }
 </script>
 

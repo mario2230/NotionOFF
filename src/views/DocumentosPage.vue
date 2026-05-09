@@ -1,90 +1,66 @@
 <template>
   <ion-page>
-    <ion-header class="doc-header">
+    <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start">
           <ion-back-button default-href="/pages/home" color="dark" />
         </ion-buttons>
-        <ion-title class="doc-toolbar-title">
-          {{ pageTitle || 'Sem título' }}
-        </ion-title>
+        <ion-title>{{ tituloPagina || 'Sem título' }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content class="doc-content">
       <div class="editor-container">
-   
         <input
-          v-model="pageTitle"
+          v-model="tituloPagina"
           type="text"
           class="page-title-input"
           placeholder="Título do documento"
+          @blur="salvarTitulo"
         />
 
-
         <div class="blocks-area">
-          <div
-            v-for="(block, index) in blocks"
-            :key="block.id"
-            class="content-block"
-          >
-
-            <div v-if="block.type === 'text'" class="text-block">
+          <div v-for="(bloco, index) in blocos" :key="bloco.id_bloco" class="content-block">
+            <div v-if="bloco.tipo === 'texto'" class="text-block">
               <textarea
-                v-model="block.content"
+                v-model="bloco.conteudo"
                 class="block-textarea"
                 rows="1"
                 placeholder="Digite algo..."
                 @input="autoResize($event)"
+                @blur="salvarConteudo(bloco)"
               ></textarea>
             </div>
 
-            <div v-else-if="block.type === 'checklist'" class="checklist-block">
+            <div v-else-if="bloco.tipo === 'checklist'" class="checklist-block">
               <ion-item lines="none" class="checklist-item">
                 <ion-checkbox
-                  :checked="block.checked"
-                  @ion-change="block.checked = $event.detail.checked"
-                  class="checklist-checkbox"
+                  :checked="bloco.feito === 1"
+                  @ion-change="alternarCheck(bloco, $event.detail.checked)"
                 />
                 <ion-input
-                  v-model="block.content"
-                  placeholder="Item da lista..."
+                  v-model="bloco.conteudo"
+                  placeholder="Item..."
                   class="checklist-input"
+                  @ion-blur="salvarConteudo(bloco)"
                 />
               </ion-item>
             </div>
 
-            <ion-button
-              fill="clear"
-              size="small"
-              class="remove-block-btn"
-              @click="removeBlock(index)"
-            >
+            <ion-button fill="clear" size="small" class="remove-block-btn" @click="removerBloco(index)">
               <ion-icon :icon="closeOutline" />
             </ion-button>
           </div>
         </div>
 
         <div class="add-block-section">
-          <ion-button
-            expand="block"
-            fill="outline"
-            color="new"
-            class="add-block-btn"
-            @click="addTextBlock"
-          >
+          <ion-button expand="block" fill="outline" color="new" class="add-block-btn" @click="addBlocoTexto">
             <ion-icon slot="start" :icon="addOutline" />
-            Adicionar bloco de texto
+            Texto
           </ion-button>
-          <ion-button
-            expand="block"
-            fill="outline"
-            color="new"
-            class="add-block-btn"
-            @click="addChecklistBlock"
-          >
+          <ion-button expand="block" fill="outline" color="new" class="add-block-btn" @click="addBlocoChecklist">
             <ion-icon slot="start" :icon="checkboxOutline" />
-            Adicionar checklist
+            Checklist
           </ion-button>
         </div>
       </div>
@@ -93,49 +69,83 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonButtons,
-  IonBackButton,
-  IonButton,
-  IonIcon,
-  IonItem,
-  IonCheckbox,
-  IonInput,
+  IonPage, IonHeader, IonToolbar, IonTitle,
+  IonContent, IonButtons, IonBackButton, IonButton,
+  IonIcon, IonItem, IonCheckbox, IonInput,
 } from '@ionic/vue';
 import { addOutline, closeOutline, checkboxOutline } from 'ionicons/icons';
+import { listarBlocos, adicionarBloco, atualizarConteudoBloco, alternarCheck as alternarCheckService, deletarBloco } from '@/database/service/blocoService';
+import { atualizarTitulo } from '@/database/service/paginaService';
 
-interface Block {
-  id: number;
-  type: 'text' | 'checklist';
-  content: string;
-  checked?: boolean;
+const route = useRoute();
+const idPagina = Number(route.params.id);
+const tituloPagina = ref('');
+const blocos = ref<any[]>([]);
+
+onMounted(async () => {
+  try {
+    const lista = await listarBlocos(idPagina);
+    blocos.value = lista.map(b => ({ ...b }));
+  } catch (e) {
+    console.error('Erro ao carregar blocos:', e);
+  }
+});
+
+async function salvarTitulo() {
+  if (!tituloPagina.value) return;
+  try {
+    await atualizarTitulo(idPagina, tituloPagina.value);
+  } catch (e) {
+    console.error('Erro ao salvar título:', e);
+  }
 }
 
-let blockIdCounter = 0;
-
-const pageTitle = ref('');
-
-const blocks = ref<Block[]>([
-  { id: blockIdCounter++, type: 'text', content: '' },
-]);
-
-function addTextBlock() {
-  blocks.value.push({ id: blockIdCounter++, type: 'text', content: '' });
+async function addBlocoTexto() {
+  try {
+    const novo = await adicionarBloco(idPagina, 'texto', '', blocos.value.length);
+    blocos.value.push(novo);
+  } catch (e) {
+    console.error('Erro ao adicionar bloco:', e);
+  }
 }
 
-function addChecklistBlock() {
-  blocks.value.push({ id: blockIdCounter++, type: 'checklist', content: '', checked: false });
+async function addBlocoChecklist() {
+  try {
+    const novo = await adicionarBloco(idPagina, 'checklist', '', blocos.value.length);
+    blocos.value.push(novo);
+  } catch (e) {
+    console.error('Erro ao adicionar checklist:', e);
+  }
 }
 
-function removeBlock(index: number) {
-  if (blocks.value.length > 1) {
-    blocks.value.splice(index, 1);
+async function salvarConteudo(bloco: any) {
+  try {
+    await atualizarConteudoBloco(bloco.id_bloco, bloco.conteudo || '');
+  } catch (e) {
+    console.error('Erro ao salvar conteúdo:', e);
+  }
+}
+
+async function alternarCheck(bloco: any, checked: boolean) {
+  try {
+    await alternarCheckService(bloco.id_bloco, checked);
+    bloco.feito = checked ? 1 : 0;
+  } catch (e) {
+    console.error('Erro ao alternar check:', e);
+  }
+}
+
+async function removerBloco(index: number) {
+  const bloco = blocos.value[index];
+  if (!bloco) return;
+  try {
+    await deletarBloco(bloco.id_bloco);
+    blocos.value.splice(index, 1);
+  } catch (e) {
+    console.error('Erro ao remover bloco:', e);
   }
 }
 
@@ -145,6 +155,7 @@ function autoResize(event: Event) {
   textarea.style.height = textarea.scrollHeight + 'px';
 }
 </script>
+
 
 <style scoped>
 .doc-toolbar-title {
