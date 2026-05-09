@@ -39,19 +39,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonButton,
-  IonIcon,
+  IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonIcon,
 } from '@ionic/vue';
 import { addOutline, documentOutline } from 'ionicons/icons';
 import DocumentCard from '@/components/DocumentCard.vue';
+
+
+import { criarPagina, listarPaginas } from '@/database/service/paginaService';
+import { adicionarBloco, listarBlocos } from '@/database/service/blocoService';
 
 interface Doc {
   id: number;
@@ -67,6 +65,35 @@ const recentDocs = ref<Doc[]>([
 
 const router = useRouter();
 
+
+onMounted(async () => {
+  const usuarioTeste = JSON.parse(localStorage.getItem('usuario') || '{}');
+  if (!usuarioTeste.id) {
+    console.warn('Nenhum usuário logado para teste. Faça cadastro/login primeiro.');
+    return;
+  }
+
+  try {
+
+    const novaPagina = await criarPagina('Minhas Notas', usuarioTeste.id);
+    console.log('Página criada:', novaPagina);
+
+    const paginas = await listarPaginas(usuarioTeste.id);
+    console.log('Páginas do usuário:', paginas);
+
+    if (paginas.length > 0) {
+      const paginaId = paginas[0].id_pagina;
+      await adicionarBloco(paginaId, 'texto', 'Primeiro parágrafo', 1);
+      await adicionarBloco(paginaId, 'checklist', 'Comprar leite', 2);
+
+      const blocos = await listarBlocos(paginaId);
+      console.log('Blocos da página:', blocos);
+    }
+  } catch (error) {
+    console.error('Erro no teste:', error);
+  }
+});
+
 function createNewPage() {
   router.push('/pages/document/novo');
 }
@@ -75,6 +102,9 @@ function openDocument(id: number) {
   router.push(`/tabs/document/${id}`);
 }
 </script>
+
+
+
 
 <style scoped>
 .home-toolbar {

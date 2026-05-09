@@ -1,12 +1,12 @@
-import type { CapacitorConfig } from '@capacitor/cli';
+import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'io.ionic.starter',
-  appName: 'NotionOFF',
+  appId: 'com.notion.lite',
+  appName: 'Notion Lite',
   webDir: 'dist',
   plugins: {
-    capacitorSQLite: {
-      eletronWindowsLocation: 'C:\\sqlite\\databases',
+    CapacitorSQLite: {
+      electronWindowsLocation: 'C:\\sqlite\\databases',
       androidIsEncryption: false,
       iosIsEncryption: false,
     },

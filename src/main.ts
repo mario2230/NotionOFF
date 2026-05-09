@@ -1,11 +1,22 @@
-import { createApp } from 'vue'
-import App from './App.vue'
+import { createApp } from 'vue';
+import App from './App.vue';
 import router from './router';
-import { initDB } from '@/database/service/authService';
 
 import { IonicVue } from '@ionic/vue';
 
-/* Core CSS required for Ionic components to work properly */
+import { Capacitor } from '@capacitor/core';
+
+import {
+  CapacitorSQLite,
+  SQLiteConnection,
+} from '@capacitor-community/sqlite';
+
+import {
+  defineCustomElements,
+} from 'jeep-sqlite/loader';
+
+import { initDB } from '@/database/service/authService';
+
 import '@ionic/vue/css/core.css';
 
 /* Basic CSS for apps built with Ionic */
@@ -35,15 +46,35 @@ import '@ionic/vue/css/palettes/dark.system.css';
 /* Theme variables */
 import './theme/variables.css';
 
-const app = createApp(App)
-  .use(IonicVue)
-  .use(router);
 
-initDB().then(() => {
+
+defineCustomElements(window);
+
+const app = createApp(App);
+
+app.use(IonicVue);
+app.use(router);
+
+async function bootstrap() {
+
+  if (Capacitor.getPlatform() === 'web') {
+
+    const jeepSqliteEl = document.createElement('jeep-sqlite');
+
+    document.body.appendChild(jeepSqliteEl);
+
+    await customElements.whenDefined('jeep-sqlite');
+
+    const sqlite = new SQLiteConnection(CapacitorSQLite);
+
+    await sqlite.initWebStore();
+  }
+
+  await initDB();
+
+  await router.isReady().then(() => {
   app.mount('#app');
 });
+}
 
-
-router.isReady().then(() => {
-  app.mount('#app');
-});
+bootstrap().catch(console.error);

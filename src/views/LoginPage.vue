@@ -12,6 +12,10 @@
                 <p class="auth-subtitle">Entre para continuar</p>
               </div>
 
+               <div v-if="erro" class="erro-msg">
+                <ion-icon :icon="alertCircleOutline" />
+                {{ erro }}
+              </div>
 
               <div class="input-group">
                 <label class="input-label">E-mail</label>
@@ -32,7 +36,7 @@
                 />
               </div>
 
-              <ion-button expand="block" color="new" class="auth-btn" @click="login">
+              <ion-button expand="block" color="new" class="auth-btn" @click="entrar">
                 Entrar
               </ion-button>
 
@@ -59,11 +63,30 @@ import {
   IonInput,
   IonButton,
 } from '@ionic/vue';
+import { alertCircleOutline } from 'ionicons/icons';
+import { login } from '@/database/service/authService';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const email = ref('');
 const password = ref('');
+const erro = ref('');
 
-function login() {
-  console.log('Login (visual)');
+
+async function entrar() {
+  erro.value = ('');
+  if(!email.value || !password.value) {
+    erro.value = 'Preencha todos os campos.';
+    return;
+  }
+  try {
+    const usuario = await login(email.value, password.value);
+    localStorage.setItem('usuario', JSON.stringify(usuario));
+    router.push('/pages/home');
+  } catch (e: any) {
+    erro.value = e.message || 'Erro ao fazer login.';
+  }
 }
+
+
 </script>
