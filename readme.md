@@ -1,46 +1,164 @@
-# 📱 Notion OFF
+````markdown id="6bkr21"
+# Notion Lite
 
-Aplicativo mobile inspirado no Notion, desenvolvido com **Ionic + Vue**, com foco em organização pessoal, funcionamento offline e estrutura flexível baseada em blocos.
-
----
-
-## 🚀 Objetivo
-
-Criar uma aplicação onde o usuário possa:
-
-* Criar e organizar páginas
-* Escrever conteúdos dinâmicos (texto, título, checklist, etc.)
-* Trabalhar offline com armazenamento local
-* Evoluir futuramente para sincronização online
+Aplicativo de organização pessoal inspirado no Notion, desenvolvido com Ionic, Vue 3 e Capacitor.  
+O projeto utiliza SQLite local para persistência de dados offline em múltiplas plataformas.
 
 ---
 
-## 🧠 Conceito Principal
+## Funcionalidades
 
-O sistema é baseado em **blocos**, onde todo conteúdo dentro de uma página é tratado como um elemento flexível.
-
-Exemplos de blocos:
-
-* Texto
-* Título
-* Checklist
-* Imagem
-
-Isso permite uma estrutura semelhante ao Notion, com alta flexibilidade.
-
----
-
-## 🧱 Tecnologias Utilizadas
-
-* Ionic Vue
-* Vue 3 (Composition API)
-* TypeScript
-* SQLite (para armazenamento local)
-* CSS customizado com tema próprio
+- Autenticação de usuários
+- Cadastro e login com senha criptografada
+- Criação e gerenciamento de páginas
+- Editor baseado em blocos
+- Checklist interativa
+- Persistência local com SQLite
+- Funcionamento offline
+- Navegação com Ionic Tabs
+- Tema responsivo com suporte a modo escuro
 
 ---
 
-## 🎨 Tema
+## Tecnologias
+
+| Tecnologia | Uso |
+|---|---|
+| Ionic Vue | Interface mobile |
+| Vue 3 Composition API | Estrutura da aplicação |
+| Capacitor | Integração multiplataforma |
+| SQLite | Banco de dados local |
+| TypeScript | Desenvolvimento tipado |
+| Vue Router | Navegação |
+| CSS Variables | Sistema de tema |
+
+---
+
+## Estrutura do Projeto
+
+```txt
+src/
+├── components/
+├── database/
+│   ├── db.ts
+│   ├── migrations.ts
+│   └── services/
+├── router/
+├── theme/
+├── views/
+├── App.vue
+└── main.ts
+````
+
+---
+
+## Instalação
+
+Clone o repositório:
+
+```bash
+git clone https://github.com/seu-usuario/notion-lite.git
+```
+
+Acesse a pasta do projeto:
+
+```bash
+cd notion-lite
+```
+
+Instale as dependências:
+
+```bash
+npm install
+```
+
+---
+
+## Executando o Projeto
+
+Modo desenvolvimento:
+
+```bash
+ionic serve
+```
+
+Build web:
+
+```bash
+npm run build
+```
+
+---
+
+## Executando no Android
+
+Adicionar plataforma:
+
+```bash
+npx cap add android
+```
+
+Sincronizar arquivos:
+
+```bash
+npx cap sync
+```
+
+Abrir no Android Studio:
+
+```bash
+npx cap open android
+```
+
+---
+
+## Executando no iOS
+
+Adicionar plataforma:
+
+```bash
+npx cap add ios
+```
+
+Sincronizar arquivos:
+
+```bash
+npx cap sync
+```
+
+Abrir no Xcode:
+
+```bash
+npx cap open ios
+```
+
+---
+
+## Banco de Dados
+
+O projeto utiliza:
+
+* `@capacitor-community/sqlite`
+* `jeep-sqlite`
+* `sql.js`
+
+O banco é inicializado automaticamente durante o bootstrap da aplicação.
+
+Tabelas principais:
+
+* usuarios
+* paginas
+* blocos
+
+---
+
+## Tema
+
+As variáveis globais estão localizadas em:
+
+```txt
+src/theme/variables.css
+```
 
 Cor principal utilizada:
 
@@ -48,148 +166,25 @@ Cor principal utilizada:
 --ion-color-new: #6366F1;
 ```
 
-Estilo:
+---
 
-* Minimalista
-* Interface limpa
-* Inspirado no Notion
+## Arquitetura
+
+O projeto segue separação por camadas:
+
+* Views
+* Services
+* Database
+* Components
+* Router
+
+A conexão SQLite utiliza um serviço centralizado (`DatabaseService`) para gerenciamento único da conexão.
 
 ---
 
-## 📂 Estrutura do Projeto
+## Status
+
+Projeto em desenvolvimento.
 
 ```
-src/
- ├── views/
- │    ├── HomePage.vue
- │    ├── DocumentosPage.vue
- │    ├── PerfilPage.vue
- │    ├── LoginPage.vue
- │    └── CadastroPage.vue
- │
- ├── router/
- │    └── index.ts
- │
- ├── theme/
- │    └── variables.css
 ```
-
----
-
-## 📱 Telas do Aplicativo
-
-### 🏠 Home
-
-* Exibe documentos recentes
-* Botão para criação de novas páginas
-
----
-
-### 📄 Documentos
-
-* Campo de título
-* Área de texto
-* Checklist
-* Estrutura baseada em blocos
-
----
-
-### 👤 Perfil
-
-* Alteração de dados do usuário
-* Troca de senha
-* Logout
-
----
-
-### 🔐 Login
-
-* Autenticação do usuário
-* Acesso à tela de cadastro
-
----
-
-## 🗄️ Modelagem do Banco
-
-### Tabela: usuarios
-
-* id_usuario
-* nome
-* email
-* senha_hash
-* criado_em
-
----
-
-### Tabela: paginas
-
-* id_pagina
-* titulo
-* id_usuario
-* criado_em
-
----
-
-### Tabela: blocos
-
-* id_bloco
-* id_pagina
-* tipo
-* conteudo (JSON em TEXT)
-* ordem
-* id_pai (hierarquia)
-* feito (checklist)
-* criado_em
-* atualizado_em
-
----
-
-## 🔗 Relacionamentos
-
-* Um usuário possui várias páginas
-* Uma página possui vários blocos
-* Um bloco pode conter outros blocos (estrutura hierárquica)
-
----
-
-## ⚙️ Funcionalidades Atuais
-
-* Estrutura de páginas
-* Interface inicial funcional
-* Sistema de blocos (base)
-* Navegação entre telas
-
----
-
-## 🚧 Próximos Passos
-
-* Implementar CRUD completo com SQLite
-* Renderização dinâmica de blocos
-* Criação de novos tipos de blocos
-* Sistema de sincronização com API
-* Melhorias de UX/UI
-* Componentização avançada
-
----
-
-## 📌 Status do Projeto
-
-Em desenvolvimento 🚧
-Foco em aprendizado, arquitetura e construção de portfólio.
-
----
-
-## 🎯 Objetivo Final
-
-Construir um aplicativo completo, escalável e com boas práticas, capaz de demonstrar:
-
-* Conhecimento em frontend mobile
-* Modelagem de dados
-* Arquitetura offline-first
-* Organização de código
-
----
-
-## 👨‍💻 Autor
-
-Desenvolvido como projeto de estudo e evolução prática.
