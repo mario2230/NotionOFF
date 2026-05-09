@@ -11,7 +11,7 @@
 
     <ion-content :fullscreen="true" class="home-content">
       <div class="greeting-section">
-        <h1 class="greeting-title">Bem‑vindo, {{ usuarioLogado?.nome }} 👋</h1>
+        <h1 class="greeting-title">Bem‑vindo, {{ usuarioLogado?.nome }} </h1>
         <p class="greeting-sub">Continue de onde parou ou crie algo novo.</p>
       </div>
 
