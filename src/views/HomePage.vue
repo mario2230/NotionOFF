@@ -11,7 +11,7 @@
 
     <ion-content :fullscreen="true" class="home-content">
       <div class="greeting-section">
-        <h1 class="greeting-title">Bem‑vindo, {{ usuarioLogado?.nome }} </h1>
+        <h1 class="greeting-title">Bem‑vindo, {{ usuarioLogado?.nome }} 👋</h1>
         <p class="greeting-sub">Continue de onde parou ou crie algo novo.</p>
       </div>
 
@@ -39,64 +39,65 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   IonPage, IonHeader, IonToolbar, IonTitle,
   IonContent, IonButton, IonIcon,
-} from '@ionic/vue';
-import { addOutline, documentOutline } from 'ionicons/icons';
-import DocumentCard from '@/components/DocumentCard.vue';
-import { listarPaginas, criarPagina } from '@/database/service/paginaService';
+  onIonViewWillEnter
+} from '@ionic/vue'
+import { addOutline, documentOutline } from 'ionicons/icons'
+import DocumentCard from '@/components/DocumentCard.vue'
+import { listarPaginas, criarPagina } from '@/database/service/paginaService'
+import { getUsuario } from '@/database/service/userService'
 
-const router = useRouter();
-const usuarioLogado = ref<{ id: number; nome: string } | null>(null);
-const documentos = ref<{ id: number; title: string; updatedAt: string }[]>([]);
+const router = useRouter()
+const usuarioLogado = ref<{ id_usuario: number; nome: string } | null>(null)
+const documentos = ref<{ id: number; title: string; updatedAt: string }[]>([])
 
-onMounted(async () => {
-  const str = localStorage.getItem('usuario');
+
+onIonViewWillEnter(async () => {
+  const str = localStorage.getItem('usuario')
   if (!str) {
-    router.push('/pages/login');
-    return;
+    router.push('/pages/login')
+    return
   }
-  usuarioLogado.value = JSON.parse(str);
-  await carregarPaginas();
-});
+  const parsed = JSON.parse(str)
+  const usuarioExiste = await getUsuario(parsed.id_usuario)
+  if (!usuarioExiste) {
+    localStorage.removeItem('usuario')
+    router.push('/pages/login')
+    return
+  }
+  usuarioLogado.value = parsed
+  await carregarPaginas()
+})
 
 async function carregarPaginas() {
-  if (!usuarioLogado.value) return;
-  try {
-    const paginas = await listarPaginas(usuarioLogado.value.id);
-    documentos.value = paginas.map(p => ({
-      id: p.id_pagina,
-      title: p.titulo,
-      updatedAt: p.criado_em,
-    }));
-  } catch (e) {
-    console.error('Erro ao carregar páginas:', e);
-  }
+  if (!usuarioLogado.value) return
+  const paginas = await listarPaginas(usuarioLogado.value.id_usuario)
+  documentos.value = paginas.map(p => ({
+    id: p.id_pagina,
+    title: p.titulo,
+    updatedAt: p.criado_em,
+  }))
 }
 
 async function createNewPage() {
-  if (!usuarioLogado.value) return;
-  try {
-    const nova = await criarPagina('Nova página', usuarioLogado.value.id);
-    documentos.value.unshift({
-      id: nova.id_pagina,
-      title: nova.titulo,
-      updatedAt: nova.criado_em,
-    });
-    router.push(`/pages/documentos/${nova.id_pagina}`);
-  } catch (e) {
-    console.error('Erro ao criar página:', e);
-  }
+  if (!usuarioLogado.value) return
+  const nova = await criarPagina('Nova página', usuarioLogado.value.id_usuario)
+  documentos.value.unshift({
+    id: nova.id_pagina,
+    title: nova.titulo,
+    updatedAt: nova.criado_em,
+  })
+  router.push(`/pages/documentos/${nova.id_pagina}`)
 }
 
 function openDocument(id: number) {
-  router.push(`/pages/documentos/${id}`);
+  router.push(`/pages/documentos/${id}`)
 }
 </script>
-
 
 
 

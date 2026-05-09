@@ -10,13 +10,12 @@
     </ion-header>
 
     <ion-content class="doc-content">
-      <div class="editor-container">
+      <div v-if="idPaginaValido" class="editor-container">
         <input
           v-model="tituloPagina"
           type="text"
           class="page-title-input"
           placeholder="Título do documento"
-          @blur="salvarTitulo"
         />
 
         <div class="blocks-area">
@@ -64,95 +63,109 @@
           </ion-button>
         </div>
       </div>
+
+      <div v-else class="empty-state">
+        <p>Nenhum documento selecionado. Crie um novo na página inicial.</p>
+      </div>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue'
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import {
   IonPage, IonHeader, IonToolbar, IonTitle,
   IonContent, IonButtons, IonBackButton, IonButton,
   IonIcon, IonItem, IonCheckbox, IonInput,
-} from '@ionic/vue';
-import { addOutline, closeOutline, checkboxOutline } from 'ionicons/icons';
-import { listarBlocos, adicionarBloco, atualizarConteudoBloco, alternarCheck as alternarCheckService, deletarBloco } from '@/database/service/blocoService';
-import { atualizarTitulo } from '@/database/service/paginaService';
+} from '@ionic/vue'
+import { addOutline, closeOutline, checkboxOutline } from 'ionicons/icons'
+import {
+  listarBlocos, adicionarBloco, atualizarConteudoBloco,
+  alternarCheck as alternarCheckService, deletarBloco,
+} from '@/database/service/blocoService'
+import { atualizarTitulo, getPagina } from '@/database/service/paginaService'
 
-const route = useRoute();
-const idPagina = Number(route.params.id);
-const tituloPagina = ref('');
-const blocos = ref<any[]>([]);
+const route = useRoute()
+const router = useRouter()
+
+const idPagina = Number(route.params.id)
+const idPaginaValido = computed(() => !isNaN(idPagina) && idPagina > 0)
+
+const tituloPagina = ref('')
+const blocos = ref<any[]>([])
+const tituloSalvo = ref('')
+let timerTitulo: ReturnType<typeof setTimeout> | null = null
 
 onMounted(async () => {
-  try {
-    const lista = await listarBlocos(idPagina);
-    blocos.value = lista.map(b => ({ ...b }));
-  } catch (e) {
-    console.error('Erro ao carregar blocos:', e);
+  if (!idPaginaValido.value) {
+    router.replace('/pages/home')
+    return
   }
-});
+  const pagina = await getPagina(idPagina)
+  if (pagina) {
+    tituloPagina.value = pagina.titulo
+    tituloSalvo.value = pagina.titulo
+  }
+  const lista = await listarBlocos(idPagina)
+  blocos.value = lista.map(b => ({ ...b }))
+})
 
-async function salvarTitulo() {
-  if (!tituloPagina.value) return;
-  try {
-    await atualizarTitulo(idPagina, tituloPagina.value);
-  } catch (e) {
-    console.error('Erro ao salvar título:', e);
+watch(tituloPagina, (novo) => {
+  if (!idPaginaValido.value || novo === tituloSalvo.value) return
+  if (timerTitulo) clearTimeout(timerTitulo)
+  timerTitulo = setTimeout(async () => {
+    await atualizarTitulo(idPagina, novo)
+    tituloSalvo.value = novo
+  }, 1000)
+})
+
+onBeforeRouteLeave(async (_to, _from, next) => {
+  if (idPaginaValido.value && tituloPagina.value !== tituloSalvo.value) {
+    await atualizarTitulo(idPagina, tituloPagina.value)
   }
-}
+  next()
+})
+
+onBeforeUnmount(async () => {
+  if (timerTitulo) clearTimeout(timerTitulo)
+  if (idPaginaValido.value && tituloPagina.value !== tituloSalvo.value) {
+    await atualizarTitulo(idPagina, tituloPagina.value)
+  }
+})
 
 async function addBlocoTexto() {
-  try {
-    const novo = await adicionarBloco(idPagina, 'texto', '', blocos.value.length);
-    blocos.value.push(novo);
-  } catch (e) {
-    console.error('Erro ao adicionar bloco:', e);
-  }
+  if (!idPaginaValido.value) return
+  const novo = await adicionarBloco(idPagina, 'texto', '', blocos.value.length)
+  blocos.value.push(novo)
 }
 
 async function addBlocoChecklist() {
-  try {
-    const novo = await adicionarBloco(idPagina, 'checklist', '', blocos.value.length);
-    blocos.value.push(novo);
-  } catch (e) {
-    console.error('Erro ao adicionar checklist:', e);
-  }
+  if (!idPaginaValido.value) return
+  const novo = await adicionarBloco(idPagina, 'checklist', '', blocos.value.length)
+  blocos.value.push(novo)
 }
 
 async function salvarConteudo(bloco: any) {
-  try {
-    await atualizarConteudoBloco(bloco.id_bloco, bloco.conteudo || '');
-  } catch (e) {
-    console.error('Erro ao salvar conteúdo:', e);
-  }
+  await atualizarConteudoBloco(bloco.id_bloco, bloco.conteudo || '')
 }
 
 async function alternarCheck(bloco: any, checked: boolean) {
-  try {
-    await alternarCheckService(bloco.id_bloco, checked);
-    bloco.feito = checked ? 1 : 0;
-  } catch (e) {
-    console.error('Erro ao alternar check:', e);
-  }
+  await alternarCheckService(bloco.id_bloco, checked)
+  bloco.feito = checked ? 1 : 0
 }
 
 async function removerBloco(index: number) {
-  const bloco = blocos.value[index];
-  if (!bloco) return;
-  try {
-    await deletarBloco(bloco.id_bloco);
-    blocos.value.splice(index, 1);
-  } catch (e) {
-    console.error('Erro ao remover bloco:', e);
-  }
+  const bloco = blocos.value[index]
+  if (!bloco) return
+  await deletarBloco(bloco.id_bloco)
+  blocos.value.splice(index, 1)
 }
 
 function autoResize(event: Event) {
-  const textarea = event.target as HTMLTextAreaElement;
-  textarea.style.height = 'auto';
-  textarea.style.height = textarea.scrollHeight + 'px';
+  const textarea = event.target as HTMLTextAreaElement
+  textarea.style.height = 'auto'
+  textarea.style.height = textarea.scrollHeight + 'px'
 }
 </script>
 

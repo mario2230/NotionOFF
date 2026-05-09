@@ -32,3 +32,9 @@ export async function deletarPagina(idPagina: number): Promise<void> {
   const db = await dbService.getDb();
   await db.run('DELETE FROM paginas WHERE id_pagina = ?', [idPagina]);
 }
+
+export async function getPagina(id: number): Promise<Pagina | null> {
+  const db = await dbService.getDb();
+  const res = await db.query('SELECT * FROM paginas WHERE id_pagina = ?', [id]);
+  return res.values?.length ? (res.values[0] as Pagina) : null;
+}

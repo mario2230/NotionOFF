@@ -9,10 +9,7 @@
     <ion-content class="profile-content">
       <div class="profile-container">
         <div class="avatar-section">
-          <div class="avatar-circle">
-            <img src="https://i.pravatar.cc/150?u=user" alt="avatar" class="avatar-img" />
-          </div>
-          <h3 class="avatar-name">{{ perfil.nome }}</h3>
+            <h3 class="avatar-name">{{ perfil.nome }}</h3>
         </div>
 
         <div class="form-section">
@@ -40,41 +37,44 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue';
+import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle,
   IonContent, IonInput, IonButton,
+  onIonViewDidEnter,
 } from '@ionic/vue';
 import { getUsuario, atualizarNome, atualizarSenha } from '@/database/service/userService';
 
 const router = useRouter();
-const perfil = reactive({ nome: '', email: '', id: 0 });
+const perfil = reactive({ nome: '', email: '', id_usuario: 0 });
 const novaSenha = ref('');
 
-onMounted(async () => {
+onIonViewDidEnter(async () => {
   const str = localStorage.getItem('usuario');
   if (!str) {
     router.push('/pages/login');
     return;
   }
+
   const usuarioLogado = JSON.parse(str);
-  const dados = await getUsuario(usuarioLogado.id);
+  const dados = await getUsuario(usuarioLogado.id_usuario);
   if (dados) {
     perfil.nome = dados.nome;
     perfil.email = dados.email;
-    perfil.id = dados.id_usuario;
+    perfil.id_usuario = dados.id_usuario;
   }
 });
 
 async function salvarPerfil() {
   try {
-    await atualizarNome(perfil.id, perfil.nome);
+    await atualizarNome(perfil.id_usuario, perfil.nome);
     if (novaSenha.value) {
-      await atualizarSenha(perfil.id, novaSenha.value);
+      await atualizarSenha(perfil.id_usuario, novaSenha.value);
       novaSenha.value = '';
     }
-    // Atualiza localStorage se mudou nome
+
+
     const str = localStorage.getItem('usuario');
     if (str) {
       const usuario = JSON.parse(str);
@@ -87,8 +87,12 @@ async function salvarPerfil() {
 }
 
 function logout() {
-  localStorage.removeItem('usuario');
-  router.push('/pages/login');
+  localStorage.removeItem('usuario')
+  perfil.nome = ''
+  perfil.email = ''
+  perfil.id_usuario = 0
+  novaSenha.value = ''
+  router.push('/pages/login')
 }
 </script>
 
